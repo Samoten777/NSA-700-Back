@@ -1,0 +1,39 @@
+stages:
+  - installing
+  - building
+  - testing
+  - backing_up
+  - deploying
+variables:
+  NODE_VERSION: '8'
+  PHP_VERSION: '7.3'
+  COMPOSER_VERSION: 2.6.6
+before_script:
+  - >-
+    echo "Using Node ${NODE_VERSION} for Frontend and PHP ${PHP_VERSION} for
+    Backend"
+install_back:
+  stage: installing
+  image: 'php:$PHP_VERSION'
+  cache:
+  before_script:
+    - apt-get update && apt-get install -y unzip zip zlib1g-dev libzip-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --version=$COMPOSER_VERSION --install-dir=/usr/local/bin --filename=composer
+  script:
+    - cd back
+    - composer install --prefer-dist --no-interaction
+  artifacts:
+    paths:
+      - back/vendor/
+      - back/.env
+build_back:
+  stage: building
+  image: 'php:$PHP_VERSION'
+  script:
+    - cd back
+    - 'php artisan package:discover'
+  artifacts:
+    paths:
+      - back/vendor/
+      - back/.env
