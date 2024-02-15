@@ -1,0 +1,68 @@
+- name: Update & upgrade all packages
+  shell: sudo apt-get update && sudo apt-get upgrade -y
+
+# - name: Installation software-properties-common
+#   apt:
+#     name: software-properties-common
+#     state: present
+#   become: yes
+#   become_method: sudo
+
+- name: Install basic packages
+  apt:
+    pkg:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+  become: yes
+  become_method: sudo
+
+- name: Add gpg key
+  shell: curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+  become: yes
+  become_method: sudo
+
+
+- name: Add PHP repository
+  apt_repository:
+    repo: ppa:ondrej/php
+  become: yes
+  become_method: sudo
+
+- name: Installation PHP 7.4
+  apt: 
+    name: php7.4
+    state: present
+
+- name: Install packages
+  apt:
+    pkg:
+    - php7.4-cli
+    - php-xml
+    - php-pgsql
+    - libapache2-mod-php
+    - apache2
+    - git
+    - zip
+    - unzip
+    - curl
+    - php-curl
+  become: yes
+  become_method: sudo
+  
+
+- name: Install composer
+  shell: curl -sS https://getcomposer.org/installer | php
+  args:
+    chdir: /var/www/html
+  become: yes
+  become_method: sudo
+
+- name: Clone the back repository
+  git:
+    repo: "https://github.com/Samoten777/NSA-700-Back.git"
+    dest: ./app/back
+  become: yes
+  become_method: sudo

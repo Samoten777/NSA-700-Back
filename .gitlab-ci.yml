@@ -55,3 +55,34 @@ backing_backend:
     - rm -f ./deploy_key.pem 
   dependencies:
     - build_back
+
+ansible:
+  stage: deploying
+  image: alpine:latest
+  before_script:
+    - apk update && apk add --no-cache bash zip openssh-client
+  script:
+    - echo "deploying ansible..."
+    - echo -e "$SSH_PRIVATE_KEY" > ./deploy_key.pem
+    - chmod 600 ./deploy_key.pem
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST 'mkdir -p /home/ubuntu/ansible'
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST 'mkdir -p /home/ubuntu/pem'
+    - tar -czvf ansible.tar.gz ansible/
+    - scp -o StrictHostKeyChecking=no -i ./deploy_key.pem ansible.tar.gz $SSH_HOST:/home/ubuntu/
+    - scp -o StrictHostKeyChecking=no -i ./deploy_key.pem ./deploy_key.pem $SSH_HOST:/home/ubuntu/pem/T_NSA.pem
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST 'tar -xzvf /home/ubuntu/ansible.tar.gz -C /home/ubuntu/ '
+    - rm -f ./deploy_key.pem
+
+
+trigger_deploy:
+  stage: deploying
+  image: alpine:latest
+  script:
+    - echo "Preparing SSH Key..."
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ./deploy_key.pem
+    - chmod 600 ./deploy_key.pem
+    - echo "Installing SSH Client..."
+    - apk add --no-cache openssh-client
+    - echo "Running Ansible Playbooks..."
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST ansible-playbook -i /home/ubuntu/ansible/hosts /home/ubuntu/ansible/playbook.yml
+  when: manual

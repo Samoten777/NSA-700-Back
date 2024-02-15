@@ -1,0 +1,2 @@
+[sla_backend]
+16.170.206.177 ansible_user=admin ansible_ssh_private_key_file=/home/admin/.ssh/ansible.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
