@@ -1,8 +1,8 @@
 stages:
   - installing
   - building
-  - testing
-  - backing_up
+  # - testing
+  # - backing_up
   - deploying
 variables:
   NODE_VERSION: '8'
@@ -12,10 +12,10 @@ before_script:
   - >-
     echo "Using Node ${NODE_VERSION} for Frontend and PHP ${PHP_VERSION} for
     Backend"
+
 install_back:
   stage: installing
   image: 'php:$PHP_VERSION'
-  cache:
   before_script:
     - apt-get update && apt-get install -y unzip zip zlib1g-dev libzip-dev
     - docker-php-ext-install zip
@@ -26,7 +26,7 @@ install_back:
   artifacts:
     paths:
       - back/vendor/
-      - back/.env
+
 build_back:
   stage: building
   image: 'php:$PHP_VERSION'
@@ -37,3 +37,21 @@ build_back:
     paths:
       - back/vendor/
       - back/.env
+
+backing_backend:
+  stage: deploying
+  image: alpine:latest
+  before_script:
+    - apk update && apk add --no-cache bash zip openssh-client
+  script:
+    - set -x
+    - echo "Backing up Backend..."
+    - echo -e "$SSH_PRIVATE_KEY" > ./deploy_key.pem
+    - chmod 600 ./deploy_key.pem
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST 'mkdir -p /home/admin/'
+    - tar -czvf back.tar.gz back/
+    - scp -o StrictHostKeyChecking=no -i ./deploy_key.pem back.tar.gz $SSH_HOST:/home/admin/
+    - ssh -o StrictHostKeyChecking=no -i ./deploy_key.pem $SSH_HOST 'tar -xzvf /home/admin/back.tar.gz -C /home/admin/'
+    - rm -f ./deploy_key.pem 
+  dependencies:
+    - build_back
