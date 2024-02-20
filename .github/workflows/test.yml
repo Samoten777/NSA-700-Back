@@ -1,0 +1,39 @@
+name: Test Backend
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.1'
+
+      - name: Install Composer dependencies
+        working-directory: ./back
+        run: |
+          rm -rf vendor/
+          rm composer.lock
+          composer install
+
+      - name: Setup .env file from .env.example
+        working-directory: ./back
+        run: cp .env.example .env
+
+      - name: Run tests
+        working-directory: ./back
+        run: php artisan key:generate
+
+      - name: Run tests
+        working-directory: ./back
+        run: vendor/bin/phpunit
